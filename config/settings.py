@@ -30,6 +30,7 @@ INSTALLED_APPS = [
 
     'rest_framework', #rest_framework
     'rest_framework_simplejwt', #rest_framework_simplejwt
+    'rest_framework_simplejwt.token_blacklist', #rest_framework_simplejwt
     'drf_yasg', #drf_yasg
 
 
@@ -50,19 +51,19 @@ REST_FRAMEWORK = {
 }
 
 
-
 from datetime import timedelta
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=150),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,  # Use Django's SECRET_KEY or a dedicated key
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=120),  # Access token uchun amal qilish muddati
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=6),     # Refresh token uchun amal qilish muddati
+    'ROTATE_REFRESH_TOKENS': False,                   # Refresh tokenni faqat bitta qayta ishlash
+    'BLACKLIST_AFTER_ROTATION': True,                  # Token yangilangandan so'ng eskilarni blacklistga qo'shish
+    'UPDATE_LAST_LOGIN': True,                         # Login va parolni yangilash
+    'ALGORITHM': 'HS256',                              # JWT algoritmi (default HS256)
+    'SIGNING_KEY': 'your-secret-key',                  # Maxfiy kalit
+    'LEEWAY': 0,                                       # Toleransiya (JWT vaqtini tekshirishda)
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

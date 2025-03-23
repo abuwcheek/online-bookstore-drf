@@ -6,7 +6,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .models import Category, Book, BookImage, BookRating, BookLike
-from .serializers import CategorySerializer, CategoryListSerializer
+from .serializers import (CategorySerializer, CategoryListSerializer,
+                          BookCreateSerializer)
 
 
 

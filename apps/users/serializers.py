@@ -10,7 +10,7 @@ class CustomUserRegisterSerializers(serializers.ModelSerializer):
      confirm_password = serializers.CharField(write_only=True)  # ✅ Modelga bog‘liq emas
      class Meta:
           model = CustomUser
-          fields = ['username', 'email', 'first_name', 'last_name', 'avatar', 'phone', 'gender', 'birth_date', 'password', 'confirm_password']
+          fields = ['username', 'email', 'first_name', 'last_name', 'avatar', 'phone', 'gender', 'birth_date', 'bio', 'password', 'confirm_password']
           extra_kwargs = {
                'password': {'write_only': True},
                'confirm_password': {'write_only': True}
@@ -57,3 +57,17 @@ class LogInUserSerializers(serializers.Serializer):
           
           attrs['user'] = user
           return attrs
+     
+
+
+class CustomUserViewProfileSerializers(serializers.ModelSerializer):
+     class Meta:
+          model = CustomUser
+          fields = ['id', 'username', 'email', 'first_name', 'last_name', 'avatar', 'phone', 'gender', 'birth_date', 'bio', 'last_login']
+
+
+
+class CustomUserUpdateSerializers(serializers.ModelSerializer):
+     class Meta:
+          model = CustomUser
+          fields = ['first_name', 'last_name', 'avatar', 'phone', 'gender', 'birth_date', 'bio']

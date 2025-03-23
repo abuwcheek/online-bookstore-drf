@@ -8,8 +8,8 @@ from apps.base.models import BaseModel
 class CustomUser(AbstractUser, BaseModel):
 
     GENDER_CHOICES = (
-    ("male", "Erkak"),
-    ("female", "Ayol"),
+    ("erkak", "Erkak"),
+    ("ayol", "Ayol"),
     )
 
     username = models.CharField(max_length=100, unique=True)

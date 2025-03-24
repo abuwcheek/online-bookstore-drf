@@ -77,3 +77,13 @@ class BookListSerializer(serializers.ModelSerializer):
           if main_image:
                return request.build_absolute_uri(main_image.image.url)  # To‘liq URL yaratish
           return None  # Agar asosiy rasm bo‘lmasa, `None` qaytariladi
+     
+
+
+class BookUpdateSerializers(serializers.ModelSerializer):
+     class Meta:
+          model = Book
+          fields = ['title', 'author', 'category', 'description', 'weight', 
+                    'internal_number', 'book_language', 'written_language', 
+                    'translator', 'book_pages', 'book_cover', 'book_type', 
+                    'file', 'stock', 'year_publication', 'country_origin', 'price', 'discount_price']

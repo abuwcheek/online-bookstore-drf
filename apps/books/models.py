@@ -55,9 +55,15 @@ class Book(BaseModel):
 
      @property
      def final_price(self):
-          if self.discount_price:  
-               return self.price * (1 - self.discount_price / 100)  # Chegirmali narx
-          return self.price  # Asl narx
+          try:
+               discount = int(self.discount_price) if self.discount_price else 0
+               price = int(self.price) if self.price else 0
+          except ValueError:
+               return self.price  # Agar qiymat noto‘g‘ri bo‘lsa, asl narxni qaytaradi
+
+          if 0 < discount < 100:  
+               return price * (1 - discount / 100)  # Chegirmali narx
+          return price  # Asl narx
 
 
      @property

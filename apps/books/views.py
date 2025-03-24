@@ -7,7 +7,8 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView,
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .models import Category, Book, BookImage, BookRating, BookLike
 from .serializers import (CategoryCreateSerializer, CategoryListSerializer,
-                          BookCreateSerializer, BookListSerializer)
+                          BookCreateSerializer, BookListSerializer, 
+                          BookUpdateSerializers)
 
 
 
@@ -97,3 +98,35 @@ class BookListView(ListAPIView):
           context = super().get_serializer_context()
           context["request"] = self.request
           return context
+
+
+
+class BookUpdateView(UpdateAPIView):
+     permission_classes = [IsAdminUser]
+     serializer_class = BookUpdateSerializers
+     queryset = Book.objects.filter(is_active=True)
+
+     def update(self, request, *args, **kwargs):
+          instance = self.get_object()  # Yangilangan obyektni olish
+          response = super().update(request, *args, **kwargs)  # Asosiy update chaqirish
+          data = {
+               'status': True, 
+               'message': "kitobni o'zgartirdingiz\n",
+               'data': response.data
+          }
+          return Response(data=data)
+
+
+
+class BookDestroyView(DestroyAPIView):
+     permission_classes = [IsAdminUser]
+     serializer_class = BookUpdateSerializers
+     queryset = Book.objects.filter(is_active=True)
+
+     def delete(self, request, *args, **kwargs):
+          super().delete(request, *args, **kwargs)
+          data = {
+               'status': True,
+               'message': "kitobni o'chirib tashladingiz"
+          }
+          return Response(data=data)

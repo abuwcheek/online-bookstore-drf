@@ -52,17 +52,17 @@ class BookCreateSerializer(serializers.ModelSerializer):
 
 
 class BookListSerializer(serializers.ModelSerializer):
-     discounted_price = serializers.SerializerMethodField()
+     new_price = serializers.SerializerMethodField()
      rating = serializers.SerializerMethodField()
      category = CategorySerializer()
      image = serializers.SerializerMethodField()
      class Meta:
           model = Book
-          fields = ['id', 'image', 'title', 'category', 'author', 'discounted_price', 'rating']
+          fields = ['id', 'image', 'title', 'category', 'author', 'new_price', 'rating']
 
 
      @staticmethod
-     def get_discounted_price( obj):
+     def get_new_price( obj):
           return obj.final_price
 
 
@@ -87,3 +87,38 @@ class BookUpdateSerializers(serializers.ModelSerializer):
                     'internal_number', 'book_language', 'written_language', 
                     'translator', 'book_pages', 'book_cover', 'book_type', 
                     'file', 'stock', 'year_publication', 'country_origin', 'price', 'discount_price']
+
+
+
+class BookRetrieveSerializers(serializers.ModelSerializer):
+     category = CategorySerializer()
+     new_price = serializers.SerializerMethodField()
+     rating = serializers.SerializerMethodField()
+     images = serializers.SerializerMethodField()
+     views = serializers.SerializerMethodField()
+
+     class Meta:
+          model = Book
+          fields = ['id', 'images', 'title', 'author', 'category', 'description', 'weight', 
+                    'internal_number', 'book_language', 'written_language', 
+                    'translator', 'book_pages', 'book_cover', 'book_type', 
+                    'file', 'stock', 'year_publication', 'country_origin', 'price', 'new_price', 'views', 'rating']
+          
+
+     @staticmethod
+     def get_new_price(obj):
+          return obj.final_price
+     
+
+     @staticmethod
+     def get_rating(obj):
+          return obj.average_rating
+     
+     
+     def get_images(self, obj):
+          request = self.context.get("request")
+          images = obj.images.all()
+          return [request.build_absolute_uri(image.image.url) for image in images]
+     
+     def get_views(self, obj):
+          return obj.views.count()

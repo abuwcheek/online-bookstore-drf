@@ -1,14 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .models import Category, Book, BookImage, BookRating, BookLike
+from .models import Category, Book, BookImage, BookRating, BookLike, View
 from .serializers import (CategoryCreateSerializer, CategoryListSerializer,
                           BookCreateSerializer, BookListSerializer, 
-                          BookUpdateSerializers)
+                          BookUpdateSerializers, BookRetrieveSerializers)
 
 
 
@@ -130,3 +130,28 @@ class BookDestroyView(DestroyAPIView):
                'message': "kitobni o'chirib tashladingiz"
           }
           return Response(data=data)
+
+
+
+class BookRetrieveView(RetrieveAPIView):
+     permission_classes = [AllowAny]
+     serializer_class = BookRetrieveSerializers
+     queryset = Book.objects.filter(is_active=True)
+     
+     def retrieve(self, request, *args, **kwargs):
+          if request.user.is_authenticated:
+               book = self.get_object()
+               user = request.user
+               view = View.objects.get_or_create(book=book, user=user)
+               # view.save()
+
+          return super().retrieve(request, *args, **kwargs)
+
+
+
+# class BookLikeView(APIView):
+#      permission_classes = [IsAuthenticated]
+
+#      def post(self, request):
+#           book_id = get_object_or_404(Book, id=request.data.get('book_id'))
+#           like = BookLike.

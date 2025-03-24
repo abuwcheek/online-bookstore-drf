@@ -39,8 +39,6 @@ class Book(BaseModel):
      country_origin = models.CharField(max_length=255, verbose_name="Nashr Mamlakati")
      price = models.IntegerField(verbose_name="Narxi")
 
-     views = models.IntegerField(default=0, verbose_name="Ko‘rishlar soni")
-     
      discount_price = models.IntegerField(default=0, verbose_name="Chegirma narxi", null=True, blank=True)
      is_discount = models.BooleanField(default=False, verbose_name="Chegirma bor yoki yo'q")
      is_free = models.BooleanField(default=False, verbose_name="Bepulmi yoki yo'q")
@@ -109,6 +107,15 @@ class BookRating(BaseModel):
 
 class BookLike(BaseModel):
      book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='boo_likes')
+     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+     def __str__(self):
+          return f"{self.user.username} → {self.book.title}"
+
+
+
+class View(BaseModel):
+     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='views')
      user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
      def __str__(self):

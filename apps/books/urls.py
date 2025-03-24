@@ -12,12 +12,13 @@ urlpatterns = [
 
 
 
-from .views import BookCreateView, BookListView, BookUpdateView, BookDestroyView
+from .views import BookCreateView, BookListView, BookUpdateView, BookDestroyView, BookRetrieveView
 
 # book uchun url
 urlpatterns += [
      path('book/create', BookCreateView.as_view()),
      path('book/list', BookListView.as_view()),
      path('book/update/<int:pk>', BookUpdateView.as_view()),
-     path('book/destroy/<int:pk>', BookDestroyView.as_view())
+     path('book/destroy/<int:pk>', BookDestroyView.as_view()),
+     path('book/retrieve/<int:pk>', BookRetrieveView.as_view()),
 ]

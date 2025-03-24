@@ -41,10 +41,9 @@ class Book(BaseModel):
 
      views = models.IntegerField(default=0, verbose_name="Ko‘rishlar soni")
      
-     discount_price = models.IntegerField(default=0, verbose_name="Chegirma narxi")
+     discount_price = models.IntegerField(default=0, verbose_name="Chegirma narxi", null=True, blank=True)
      is_discount = models.BooleanField(default=False, verbose_name="Chegirma bor yoki yo'q")
      is_free = models.BooleanField(default=False, verbose_name="Bepulmi yoki yo'q")
-     published_date = models.DateField(verbose_name="Nashr sanasi")
      is_published = models.BooleanField(default=False, verbose_name="Nashr qilinganmi yoki yo'q")
      is_featured = models.BooleanField(default=False, verbose_name="Taniqli kitobmi yoki yo'q")
      is_bestseller = models.BooleanField(default=False, verbose_name="Eng ko'p sotilgan kitobmi yoki yo'q")
@@ -52,6 +51,18 @@ class Book(BaseModel):
      is_popular = models.BooleanField(default=False, verbose_name="Ommabopmi yoki yo'q")
      is_top_rated = models.BooleanField(default=False, verbose_name="Eng yaxshi reytingga ega kitobmi yoki yo'q")
 
+
+
+     @property
+     def final_price(self):
+          if self.discount_price:  
+               return self.price * (1 - self.discount_price / 100)  # Chegirmali narx
+          return self.price  # Asl narx
+
+
+     @property
+     def average_rating(self):
+          return self.ratings.aggregate(models.Avg('rating'))['rating__avg'] or 0
 
 
      def __str__(self):

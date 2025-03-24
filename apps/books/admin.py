@@ -31,10 +31,10 @@ class BookImageInline(admin.StackedInline):
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
      inlines = [BookImageInline]
-     list_display = ('id', 'title', 'author', 'price', 'book_type', 'stock', 'views', 'is_published', 'is_featured', 'is_bestseller', 'is_new', 'is_popular', 'is_free', 'is_discount', 'discount_price', 'published_date', 'is_active')
+     list_display = ('id', 'title', 'author', 'price', 'book_type', 'stock', 'views', 'is_published', 'is_featured', 'is_bestseller', 'is_new', 'is_popular', 'is_free', 'is_discount', 'discount_price', 'year_publication', 'is_active')
      list_display_links = ('id', 'title', 'author', 'price',)
      search_fields = ('title', 'author', 'country_origin', 'price', 'is_published', 'is_featured', 'is_bestseller', 'is_new', 'is_popular')
-     list_editable = ('is_published', 'is_featured', 'is_bestseller', 'is_new', 'is_popular', 'is_free', 'is_discount', 'discount_price', 'is_active')
+     list_editable = ('is_published', 'is_featured', 'is_bestseller', 'is_new', 'is_popular', 'is_free', 'is_discount', 'is_active')
      readonly_fields = ('views',)
      list_per_page = 25
 

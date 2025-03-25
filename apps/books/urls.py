@@ -40,8 +40,8 @@ from .views import BookReviewAddView, BookReviewUpdateView, BookReviewDestroyVie
 # BookReview uchun url
 urlpatterns += [
      path('book/review/add', BookReviewAddView.as_view()),
-     path('book/review/update/<int:pk>', BookReviewUpdateView.as_view()),
-     path('book/review/delete/<int:pk>', BookReviewDestroyView.as_view()),
-     path('book/review/list/<int:pk>', BookReviewListView.as_view()),
-     path('book/top-rating', BookTopRatingListView.as_view()),
+     path('book/review/<int:pk>/update', BookReviewUpdateView.as_view()),
+     path('book/review/<int:pk>/delete', BookReviewDestroyView.as_view()),
+     path('book/review/<int:pk>/list', BookReviewListView.as_view()),
+     path('book/top-rated', BookTopRatingListView.as_view()),
 ]

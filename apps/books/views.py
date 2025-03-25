@@ -1,14 +1,20 @@
+from itertools import count
+from django.db.models import Avg, Count
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404, render
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
-from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView, CreateAPIView, UpdateAPIView, DestroyAPIView, ListCreateAPIView
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .models import Category, Book, BookImage, BookRating, BookLike, View
+from .models import Category, Book, BookImage, BookRating, Wishlist, View
 from .serializers import (CategoryCreateSerializer, CategoryListSerializer,
                           BookCreateSerializer, BookListSerializer, 
-                          BookUpdateSerializers, BookRetrieveSerializers)
+                          BookUpdateSerializers, BookRetrieveSerializers, 
+                          UserAddWishlistSerializer, UserWishlistSerializer,
+                          BookReviewAddSerializer, BookReviewUpdateSerializer,
+                          BookReviewListSerializer, BookTopRatingSerializers)
 
 
 
@@ -68,13 +74,22 @@ class BookCreateView(APIView):
      serializer_class = BookCreateSerializer
      
      def post(self, request):
+          internal_number = request.data.get('internal_number')
+
+          if Book.objects.filter(internal_number=internal_number).exists():
+               data = {
+                    'status': False,
+                    'message': "Bu ichki raqam orqali oldin kitob qo'shilgan",
+               }
+               return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+          
           serializer = self.serializer_class(data=request.data, context={'request': request})
           serializer.is_valid(raise_exception=True)
           serializer.save()
 
           data = {
                'status': True,
-               'message': "kitob qo'shdingiz\n",
+               'message': "kitob qo'shdingiz",
                'data': serializer.data
           }
           return Response(data=data)
@@ -111,7 +126,7 @@ class BookUpdateView(UpdateAPIView):
           response = super().update(request, *args, **kwargs)  # Asosiy update chaqirish
           data = {
                'status': True, 
-               'message': "kitobni o'zgartirdingiz\n",
+               'message': "kitobni o'zgartirdingiz",
                'data': response.data
           }
           return Response(data=data)
@@ -149,9 +164,160 @@ class BookRetrieveView(RetrieveAPIView):
 
 
 
-# class BookLikeView(APIView):
-#      permission_classes = [IsAuthenticated]
+class UserCreateWishlistView(CreateAPIView):
+     permission_classes = [IsAuthenticated]
+     serializer_class = UserAddWishlistSerializer
 
-#      def post(self, request):
-#           book_id = get_object_or_404(Book, id=request.data.get('book_id'))
-#           like = BookLike.
+     def get_queryset(self):
+          return Wishlist.objects.filter(user=self.request.user)
+     
+     def create(self, request, *args, **kwargs):
+          book_id = request.data.get('book')
+          book = get_object_or_404(Book, id=book_id)
+          wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, book=book)
+          data = {
+               'status': True,
+               'message': "kitob wishlistga qo'shildi",
+               'data': UserAddWishlistSerializer(wishlist_item).data
+          }
+
+          if not created:
+               data = {
+                    'status': False,
+                    'message': "Bu kitob allaqachon wishlistda mavjud",
+               }
+               return Response(data=data)
+
+          return Response(data=data, status=status.HTTP_201_CREATED)
+
+
+
+class UserWishlistListView(ListAPIView):
+     permission_classes = [IsAuthenticated]
+     serializer_class = UserWishlistSerializer
+
+     def get_queryset(self):
+          return Wishlist.objects.filter(user=self.request.user)
+
+
+
+class UserDestoryWishlistView(DestroyAPIView):
+     permission_classes = [IsAuthenticated]
+
+     def delete(self, request, *args, **kwargs):
+          user = request.user
+          book_id = kwargs.get('pk')
+          book = get_object_or_404(Book, id=book_id)
+          wishlist_item = Wishlist.objects.filter(user=user, book=book).first()
+          if not wishlist_item:
+               data = {
+                    'status': False,
+                    'message': "Bu kitob wishlistda mavjud emas",
+               }
+               return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+          
+
+          wishlist_item.delete()
+          data = {
+               'status': True,
+               'message': "kitob wishlistdan o'chirildi",
+          }
+          return Response(data=data, status=status.HTTP_200_OK)
+
+
+
+class BookReviewAddView(CreateAPIView):
+     permission_classes = [IsAuthenticated]
+     serializer_class = BookReviewAddSerializer
+     queryset = BookRating.objects.all()     
+
+
+     def create(self, request, *args, **kwargs):
+          user = request.user
+          book_id = request.data.get('book')
+          book = get_object_or_404(Book, id=book_id)
+          if BookRating.objects.filter(book=book, user=user).exists() and not user.is_staff:
+               data = {
+                    'status': False,
+                    'message': "Bu kitobga siz oldinroq sharh qoldirdingiz",
+               }
+               return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+
+          serializer = self.get_serializer(data=request.data)
+          serializer.is_valid(raise_exception=True)
+          serializer.save()
+          data = {
+               'status': True,
+               'message': "sharh qoldirdingiz",
+               'data': serializer.data
+          }
+          return Response(data=data, status=status.HTTP_201_CREATED)
+
+
+
+class BookReviewUpdateView(UpdateAPIView):
+     permission_classes = [IsAuthenticated]
+     serializer_class = BookReviewUpdateSerializer
+     queryset = BookRating.objects.all()
+
+     def update(self, request, *args, **kwargs):
+          instance = self.get_object()
+
+          if request.user != instance.user:
+               data = {
+                    'status': False,
+                    'message': "Siz faqat o'zingizning sharhingizni o'zgartira olasiz",
+               }
+               return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+
+          response = super().update(request, *args, **kwargs)
+          data = {
+               'status': True,
+               'message': "sharhni o'zgartirdingiz",
+               'data': response.data
+          }
+          return Response(data=data)
+
+
+
+class BookReviewDestroyView(DestroyAPIView):
+     permission_classes = [IsAuthenticated, IsAdminUser]
+     serializer_class = BookReviewAddSerializer
+     queryset = BookRating.objects.all()
+
+     def delete(self, request, *args, **kwargs):
+          instance = self.get_object()
+
+          if request.user != instance.user and not request.user.is_staff:
+               data = {
+                    'status': False,
+                    'message': "Siz faqat o'zingizning sharhingizni o'chira olasiz",
+               }
+               return Response(data=data, status=status.HTTP_400_BAD_REQUEST)
+
+
+          self.perform_destroy(instance)
+          data = {
+               'status': True,
+               'message': "sharh o'chirildi",
+          }
+          return Response(data=data, status=status.HTTP_200_OK)
+
+
+
+class BookReviewListView(ListAPIView):
+     permission_classes = [AllowAny]
+     serializer_class = BookReviewListSerializer
+     queryset = BookRating.objects.all()
+
+
+
+class BookTopRatingListView(ListAPIView):
+     permission_classes = [AllowAny]
+     serializer_class = BookTopRatingSerializers
+     
+     def get_queryset(self):
+          return Book.objects.annotate(
+               avg_rating=Avg('ratings__rating'),  # O'rtacha reytingni hisoblash
+               review_count=Count('ratings')  # Sharhlar sonini hisoblash
+          ).filter(avg_rating__isnull=False).order_by('-avg_rating', '-review_count')[:10]  # Eng yuqori baholangan 10 ta kitob

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Book, BookImage, BookRating, BookLike
+from .models import Category, Book, BookImage, BookRating, Wishlist
 
 
 
@@ -7,7 +7,7 @@ from .models import Category, Book, BookImage, BookRating, BookLike
 class CategoryCreateSerializer(serializers.ModelSerializer):
      class Meta:
           model = Category
-          fields = ['name']
+          fields = ['id', 'name']
 
 
 
@@ -28,26 +28,28 @@ class CategorySerializer(serializers.ModelSerializer):
 class BookCreateSerializer(serializers.ModelSerializer):
      class Meta:
           model = Book
-          fields = ['title', 'author', 'category', 'description', 'weight', 
+          fields = ['id' ,'title', 'author', 'category', 'description', 'weight', 
                     'internal_number', 'book_language', 'written_language', 
                     'translator', 'book_pages', 'book_cover', 'book_type', 
                     'file', 'stock', 'year_publication', 'country_origin', 'price', 'discount_price']
           
      
-     def validate(self, attrs):
-          if attrs['price'] < 0:
+     def validate_price(self, value):
+          if value is None:
+               raise serializers.ValidationError("Narxi bo'sh bo'lmasligi kerak")
+          if value < 0:
                raise serializers.ValidationError("Narxi manfiy bo'lishi mumkin emas")
-          
-          if attrs['internal_number'] < 0:
-               raise serializers.ValidationError("Ichki raqam manfiy bo'lishi mumkin emas")
-          
-          if attrs['book_pages'] < 0:
-               raise serializers.ValidationError("Sahifalar soni manfiy bo'lishi mumkin emas")
-          
-          if attrs['discount_price'] < 0:
-               raise serializers.ValidationError("Chegirma 0 dan kichik bo'lishi mumkin emas")
-          
-          return attrs
+          return value
+     
+     def validate_internal_number(self, value):
+          if Book.objects.filter(internal_number=value).exists():
+               raise serializers.ValidationError("Bu ichki raqam orqali oldin kitob qo'shilgan")
+
+          if value is None:
+               raise serializers.ValidationError("Ichki raqami bo'sh bo'lmasligi kerak")
+          if value < 0:
+               raise serializers.ValidationError("Ichki raqami manfiy bo'lishi mumkin emas")
+          return value
 
 
 
@@ -94,6 +96,7 @@ class BookRetrieveSerializers(serializers.ModelSerializer):
      category = CategorySerializer()
      new_price = serializers.SerializerMethodField()
      rating = serializers.SerializerMethodField()
+     review = serializers.SerializerMethodField()
      images = serializers.SerializerMethodField()
      views = serializers.SerializerMethodField()
 
@@ -102,7 +105,7 @@ class BookRetrieveSerializers(serializers.ModelSerializer):
           fields = ['id', 'images', 'title', 'author', 'category', 'description', 'weight', 
                     'internal_number', 'book_language', 'written_language', 
                     'translator', 'book_pages', 'book_cover', 'book_type', 
-                    'file', 'stock', 'year_publication', 'country_origin', 'price', 'new_price', 'views', 'rating']
+                    'file', 'stock', 'year_publication', 'country_origin', 'price', 'new_price', 'views', 'rating', 'review']
           
 
      @staticmethod
@@ -114,6 +117,12 @@ class BookRetrieveSerializers(serializers.ModelSerializer):
      def get_rating(obj):
           return obj.average_rating
      
+
+     @staticmethod
+     def get_review(obj):
+          reviews = obj.ratings.all()
+          return BookReviewAddSerializer(reviews, many=True).data
+     
      
      def get_images(self, obj):
           request = self.context.get("request")
@@ -122,3 +131,65 @@ class BookRetrieveSerializers(serializers.ModelSerializer):
      
      def get_views(self, obj):
           return obj.views.count()
+
+
+
+class UserAddWishlistSerializer(serializers.ModelSerializer):
+     book = BookListSerializer()
+     class Meta:
+          model = Wishlist
+          fields = ['book']
+
+
+
+class UserWishlistSerializer(serializers.ModelSerializer):
+     book = BookListSerializer()
+     count = serializers.SerializerMethodField()
+     class Meta:
+          model = Wishlist
+          fields = ['count' ,'book', 'created_at']
+
+
+     def get_count(self, obj):
+          user = self.context.get("request").user
+          return Wishlist.objects.filter(user=user).count()
+
+
+
+class BookReviewAddSerializer(serializers.ModelSerializer):
+     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+     class Meta:
+          model = BookRating
+          fields = ['id', 'user', 'book', 'review', 'rating']
+
+
+
+class BookReviewUpdateSerializer(serializers.ModelSerializer):
+     class Meta:
+          model = BookRating
+          fields = ['review', 'rating']
+
+
+
+class BookReviewListSerializer(serializers.ModelSerializer):
+     user = serializers.SerializerMethodField()
+     class Meta:
+          model = BookRating
+          fields = ['id', 'user', 'review', 'rating', 'created_at']
+
+
+     @staticmethod
+     def get_user(obj):
+          return obj.user.username
+     
+
+
+class BookTopRatingSerializers(serializers.ModelSerializer):
+     rating = serializers.SerializerMethodField()
+     class Meta:
+          model = Book
+          fields = ['id', 'title', 'author', 'rating']
+
+
+     def get_rating(self, obj):
+          return obj.average_rating

@@ -15,10 +15,10 @@ class Category(BaseModel):
 class Book(BaseModel):
      title = models.CharField(max_length=255)
      author = models.CharField(max_length=255, null=True, blank=True)
-     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True, related_name="books")
      description = models.TextField(verbose_name="Kitob haqida", null=True, blank=True)
      weight = models.IntegerField(verbose_name="Og'irligi")
-     internal_number = models.IntegerField(verbose_name="Ichki raqam")
+     internal_number = models.IntegerField(verbose_name="Ichki raqam", unique=True)
      book_language = models.CharField(max_length=255, verbose_name="Kitob tili")
      written_language = models.CharField(max_length=255, verbose_name="Yozilgan tili")
      translator = models.CharField(max_length=255, verbose_name="Kim tarjima qigani", null=True, blank=True)
@@ -86,7 +86,7 @@ class BookImage(BaseModel):
 
 class BookRating(BaseModel):
      book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='ratings')
-     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
      review = models.TextField(null=True, blank=True)
 
      choices = (
@@ -105,12 +105,15 @@ class BookRating(BaseModel):
 
 
 
-class BookLike(BaseModel):
-     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='boo_likes')
-     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+class Wishlist(BaseModel):
+     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='wishlist')
+     book = models.ForeignKey(Book, on_delete=models.CASCADE)
+
+     class Meta:
+          unique_together = ('user', 'book')  # Bir kitobni bir foydalanuvchi faqat bir marta wishlistga qo‘sha oladi
 
      def __str__(self):
-          return f"{self.user.username} → {self.book.title}"
+          return f"{self.user.username} - {self.book.title}"
 
 
 

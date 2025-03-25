@@ -1,6 +1,7 @@
 from traceback import format_tb
+from django.utils.html import format_html
 from django.contrib import admin
-from .models import Category, Book, BookImage, BookLike
+from .models import Category, Book, BookImage, Wishlist, BookRating, View
 
 
 @admin.register(Category)
@@ -19,12 +20,11 @@ class BookImageInline(admin.StackedInline):
 
      def get_image(self, obj):
           if obj.image:
-               return format_tb('<img src="{}" style="max-height: 150px;"/>', obj.image.url)
+               return format_html('<img src="{}" style="max-height: 150px;"/>', obj.image.url)
           return "-"
-     
+          
 
      get_image.short_description = "Rasm"
-     get_image.allow_tags = True
      
 
 
@@ -41,9 +41,27 @@ class BookAdmin(admin.ModelAdmin):
 
 
 
-@admin.register(BookLike)
+@admin.register(Wishlist)
 class BookLikeAdmin(admin.ModelAdmin):
-     list_display = ('id', 'book', 'user')
+     list_display = ('id', 'book', 'user', 'created_at')
      list_display_links = ('id', 'book', 'user')
-     search_fields = ('book', 'user')
+     search_fields = ('book', 'user', 'created_at')
+     list_per_page = 25
+
+
+
+@admin.register(BookRating)
+class BookRatingAdmin(admin.ModelAdmin):
+     list_display = ('id', 'book__id', 'book', 'user', 'rating', 'review', 'created_at')
+     list_display_links = ('id', 'book', 'user')
+     search_fields = ('book', 'user', 'rating', 'review', 'created_at')
+     list_per_page = 25
+
+
+
+@admin.register(View)
+class ViewAdmin(admin.ModelAdmin):
+     list_display = ('id', 'book', 'user', 'created_at')
+     list_display_links = ('id', 'book', 'user')
+     search_fields = ('book', 'user', 'created_at')
      list_per_page = 25

@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'apps.base',
     'apps.users',
     'apps.books', 
+    'apps.orders'
+    
 ]
 
 REST_FRAMEWORK = {

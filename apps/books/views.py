@@ -308,8 +308,14 @@ class BookReviewDestroyView(DestroyAPIView):
 class BookReviewListView(ListAPIView):
      permission_classes = [AllowAny]
      serializer_class = BookReviewListSerializer
-     queryset = BookRating.objects.all()
 
+     def get_queryset(self):
+          book_id = self.kwargs.get('pk')
+          if book_id:
+               book = get_object_or_404(Book, id=book_id)
+               return BookRating.objects.filter(book=book)
+          return BookRating.objects.all()
+     
 
 
 class BookTopRatingListView(ListAPIView):

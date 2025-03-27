@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Order, OrderItem
 from apps.users.models import CustomUser
 
 
@@ -57,3 +57,18 @@ class CartStatusUpdateSerializers(serializers.ModelSerializer):
           instance.save()
           return instance
 
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+     class Meta:
+          model = OrderItem
+          fields = ["book", "quantity", "price"]
+
+
+
+class OrderSerializer(serializers.ModelSerializer):
+     items = OrderItemSerializer(many=True, read_only=True)  # Buyurtmadagi mahsulotlarni qo'shish
+
+     class Meta:
+          model = Order
+          fields = ["id", "user", "total_price", "status", "payment_status", "address", "phone", "items"]

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Order, OrderItem
 
 
 @admin.register(Cart)
@@ -15,3 +15,8 @@ class CartItemAdmin(admin.ModelAdmin):
      list_display_links = ['id', 'book', 'quantity',]
      search_fields = ['cart', 'book', 'created_at', 'status']
      list_editable = ('status', 'is_active')
+
+
+
+admin.site.register(Order)
+admin.site.register(OrderItem)

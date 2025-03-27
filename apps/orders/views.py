@@ -6,9 +6,10 @@ from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, RetrieveAPIView, DestroyAPIView, ListAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 
+from apps.orders.utilits import create_order_from_cart
 from apps.users.models import CustomUser
-from .models import Cart, CartItem
-from .serializers import CartSerializers, CartItemSerializers, CartStatusUpdateSerializers
+from .models import Cart, CartItem, Order
+from .serializers import CartSerializers, CartItemSerializers, CartStatusUpdateSerializers, OrderSerializer
 from apps.books.models import Book
 from .permissions import IsSuperAdmin
 
@@ -165,3 +166,178 @@ class AdminStatsView(APIView):
                "total_orders": Cart.objects.count(),
           }
           return Response(data)
+
+
+
+class CreateOrderView(APIView):
+     """
+     Savatchadagi mahsulotlarni buyurtmaga o'tkazish   
+     """
+     permission_classes = [IsAuthenticated]  # Faqat login bo'lganlar foydalanishi mumkin
+
+     def post(self, request):
+          user = request.user
+          order = create_order_from_cart(user)  # Savatchadagi mahsulotlarni buyurtmaga o‘tkazamiz
+
+          if not order:
+               data = {
+                    'status': False,
+                    "message": "savatchangiz bo‘sh!"
+               }
+               return Response(data=data)
+
+          data = {
+               'status': True,
+               'message': 'orderga qo\'shildi',
+               'data': OrderSerializer(order).data,
+          }
+          return Response(data=data)  # Buyurtmani JSON formatda qaytaramiz
+
+
+
+class UserOrdersView(ListAPIView):
+     """
+     Foydalanuvchi o'z buyurtmalarini ko'rishi mumkin
+     Admin esa barcha buyurtmalarni ko'rishi mumkin
+     """
+     serializer_class = OrderSerializer
+     permission_classes = [IsAuthenticated]
+
+     def get_queryset(self):
+          user = self.request.user
+          if user.is_staff:
+               return Order.objects.all()  # Admin barcha buyurtmalarni ko'radi
+          return Order.objects.filter(user=user)  # Oddiy user faqat o'z buyurtmalarini ko'radi
+
+
+
+class UpdateOrderStatusView(APIView):
+     permission_classes = [IsAdminUser]  # Faqat adminlar uchun
+
+     def patch(self, request, order_id):
+          order = get_object_or_404(Order, id=order_id)
+          new_status = request.data.get("status")
+
+          if new_status not in ["pending", "confirmed", "shipped", "delivered", "cancelled"]:
+               data = {
+                    'status': False,
+                    "message": "noto'g'ri status"
+               }
+               return Response(data=data)
+          
+          order.status = new_status
+          order.save()
+
+          data = {
+               'status': True,
+               'message': "status o'zgartirildi",
+               'data': OrderSerializer(order).data,
+          }
+
+          return Response(data=data)
+
+
+
+class OrderDeleteView(DestroyAPIView):
+     """
+     Foydalanuvchi faqat o'zining buyurtmalarini o'chira oladi.
+     Admin esa istalgan buyurtmani o'chira oladi.
+     """
+     permission_classes = [IsAuthenticated]
+
+     def delete(self, request, order_id):
+          order = get_object_or_404(Order, id=order_id)
+
+          if request.user != order.user and not request.user.is_staff:
+               data = {
+                    'status': False,
+                    'message': "siz bu buyurtmani o‘chira olmaysiz!"
+               }
+               return Response(data=data)
+
+          order.delete()
+          
+          data = {
+               'status': True,
+               'message': "buyurtma muvaffaqiyatli o‘chirildi!"
+          }
+          return Response(data=data)
+
+
+
+class AddressOrderView(APIView):
+     """
+     Foydalanuvchi cartdagi mahsulotlardan buyurtma yaratishi mumkin
+     """
+     def post(self, request):
+          user = request.user
+          cart = Cart.objects.filter(user=user).first()
+
+          if not cart or not cart.items.exists():
+               data = {
+                    'status': False,
+                    'message': 'cartingiz bo\'sh'
+               }
+               return Response(data=data)
+
+
+          address = request.data.get("address")
+          phone = request.data.get("phone")
+
+
+          if not address or not phone:
+               data = {
+                    'status': False,
+                    'message': 'manzil va telefon raqami kerak!'
+               }
+               return Response(data=data)
+
+          total_price = cart.total_price()
+
+          order = Order.objects.create(
+               user=user,
+               total_price=total_price,
+               address=address,
+               phone=phone
+          )
+
+          for item in cart.items.all():
+               order.items.create(book=item.book, quantity=item.quantity, price=item.total_price())
+
+          cart.items.all().delete()
+
+          data = {
+               'status': True,
+               'message': 'buyurtmangiz to\'lovga tayyor',
+               'data': OrderSerializer(order).data,
+          }
+          return Response(data=data)
+
+
+
+class UpdatePaymentStatusView(APIView):
+     """
+     Admin buyurtmaning to‘lov statusini o‘zgartira oladi
+     """
+     permission_classes = [IsAdminUser]
+
+     def patch(self, request, order_id):
+          order = get_object_or_404(Order, id=order_id)
+          new_status = request.data.get("payment_status")
+
+          if new_status not in ["paid", "failed"]:
+               data = {
+                    'status': False,
+                    'message': "noto‘g‘ri status!"
+               }
+               return Response(data=data)
+
+
+          order.payment_status = new_status
+          order.save()
+
+          data = {
+               'status': True,
+               'message': "to‘lov statusi {new_status} ga o‘zgartirildi!"
+          }
+          return Response(data=data)

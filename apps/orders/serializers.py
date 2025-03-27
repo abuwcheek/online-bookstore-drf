@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Cart, CartItem
+from apps.users.models import CustomUser
 
 
 
@@ -55,3 +56,4 @@ class CartStatusUpdateSerializers(serializers.ModelSerializer):
           instance.status = validated_data.get('status', instance.status)
           instance.save()
           return instance
+

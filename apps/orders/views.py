@@ -4,10 +4,13 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, RetrieveAPIView, DestroyAPIView, ListAPIView, UpdateAPIView
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+
+from apps.users.models import CustomUser
 from .models import Cart, CartItem
 from .serializers import CartSerializers, CartItemSerializers, CartStatusUpdateSerializers
 from apps.books.models import Book
+from .permissions import IsSuperAdmin
 
 
 
@@ -148,3 +151,17 @@ class CartHistoryAPIView(APIView):
                'orders': CartSerializers(orders, many=True).data  
           }
           return Response(data=data)
+
+
+
+class AdminStatsView(APIView):
+     permission_classes = [IsSuperAdmin]  # Faqat adminlar uchun ruxsat
+
+     def get(self, request):
+          data = {
+               "total_users": CustomUser.objects.count(),
+               "active_users": CustomUser.objects.filter(is_active=True).count(),
+               "total_books": Book.objects.count(),
+               "total_orders": Cart.objects.count(),
+          }
+          return Response(data)

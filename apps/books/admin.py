@@ -35,7 +35,7 @@ class BookAdmin(admin.ModelAdmin):
      list_display_links = ('id', 'title', 'author', 'price',)
      search_fields = ('title', 'author', 'country_origin', 'price', 'is_published', 'is_featured', 'is_bestseller', 'is_new', 'is_popular')
      list_editable = ('is_published', 'is_featured', 'is_bestseller', 'is_new', 'is_popular', 'is_free', 'is_discount', 'is_active')
-     readonly_fields = ('views',)
+     # readonly_fields = ('views',)
      list_per_page = 25
 
 

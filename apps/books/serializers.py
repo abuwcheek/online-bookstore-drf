@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Category, Book, BookImage, BookRating, Wishlist
-
+from apps.orders.models import CartItem
 
 
 
@@ -58,9 +58,11 @@ class BookListSerializer(serializers.ModelSerializer):
      rating = serializers.SerializerMethodField()
      category = CategorySerializer()
      image = serializers.SerializerMethodField()
+     is_wishlist = serializers.SerializerMethodField()
+     is_cart = serializers.SerializerMethodField()
      class Meta:
           model = Book
-          fields = ['id', 'image', 'title', 'category', 'author', 'new_price', 'rating']
+          fields = ['id', 'image', 'title', 'category', 'author', 'new_price', 'rating', 'is_wishlist', 'is_cart']
 
 
      @staticmethod
@@ -72,14 +74,26 @@ class BookListSerializer(serializers.ModelSerializer):
           return obj.average_rating
 
 
-     
      def get_image(self, obj):
           request = self.context.get("request")  # Request objectni olish
           main_image = obj.images.filter(is_main=True).first()
           if main_image:
                return request.build_absolute_uri(main_image.image.url)  # To‘liq URL yaratish
           return None  # Agar asosiy rasm bo‘lmasa, `None` qaytariladi
+
+
+     def get_is_wishlist(self, obj):
+          user = self.context['request'].user
+          if user.is_authenticated:
+               return Wishlist.objects.filter(user=user, book=obj).exists()
+          return False
      
+
+     def get_is_cart(self, obj):
+          user = self.context['request'].user
+          if user.is_authenticated:
+               return CartItem.objects.filter(cart__user=user, book=obj).exists()
+          return False
 
 
 class BookUpdateSerializers(serializers.ModelSerializer):
